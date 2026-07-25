@@ -25,7 +25,8 @@ class Agent:
             "cpu_logical": psutil.cpu_count(logical=True),
             "ram_gb": round(psutil.virtual_memory().total / (1024**3), 2),
             "disk_gb": round(psutil.disk_usage('/').total / (1024**3), 2),
-            "has_gpu": False
+            "has_gpu": False,
+            "os": sys.platform
         }
     
     def register(self):
@@ -69,18 +70,29 @@ class Agent:
         return None
     
     def run_job(self, job):
-        """Run a job in Docker and capture output."""
+        """Run a job in Docker with security sandbox."""
         job_id = job.get("id")
         docker_image = job.get("docker_image")
         command = job.get("command")
         
         print(f"\n► Running job {job_id}...")
         print(f"  Image: {docker_image}")
-        print(f"  Command: {command}")
+        print(f"  Command: {command[:100]}{'...' if len(command) > 100 else ''}")
         
         try:
+            # Run Docker container with security sandbox protections
             docker_cmd = [
-                "docker", "run", "--rm",
+                "docker", "run", 
+                "--rm",                          # Auto-remove container
+                "--read-only",                   # Read-only filesystem
+                "--cap-drop=ALL",                # Drop all capabilities
+                "--cap-add=NET_BIND_SERVICE",   # Only allow minimal capabilities
+                "--security-opt=no-new-privileges:true",  # No privilege escalation
+                "--pids-limit=512",              # Limit processes
+                "--memory=512m",                 # Memory limit: 512MB
+                "--cpus=1",                      # CPU limit: 1 core
+                "--network=none",                # No network access
+                "--tmpfs=/tmp:rw,noexec",       # Temp filesystem
                 docker_image,
                 "/bin/sh", "-c", command
             ]
@@ -105,14 +117,14 @@ class Agent:
         except subprocess.TimeoutExpired:
             return {
                 "output": "",
-                "error": "Job timeout (60s)",
+                "error": "Job timeout (60s limit enforced)",
                 "exit_code": -1,
                 "success": False
             }
         except Exception as e:
             return {
                 "output": "",
-                "error": str(e),
+                "error": f"Execution error: {str(e)}",
                 "exit_code": -1,
                 "success": False
             }
@@ -145,21 +157,38 @@ class Agent:
     def run(self):
         """Main agent loop."""
         print(f"\n{'='*60}")
-        print(f"Uptime Agent v1 — {self.name}")
+        print(f"Uptime Agent v1 — Sandboxed Compute Worker")
+        print(f"Device: {self.name}")
         print(f"Device ID: {self.device_id}")
         print(f"Control Plane: {self.control_plane_url}")
         print(f"{'='*60}\n")
         
-        print("Specs:")
-        for key, val in self.specs.items():
-            print(f"  {key}: {val}")
+        print("Device Specifications:")
+        print(f"  CPU Cores (Physical): {self.specs['cpu_cores']}")
+        print(f"  CPU Cores (Logical): {self.specs['cpu_logical']}")
+        print(f"  RAM: {self.specs['ram_gb']} GB")
+        print(f"  Disk: {self.specs['disk_gb']} GB")
+        print(f"  Operating System: {self.specs['os']}")
         print()
         
+        print("Security Features:")
+        print("  ✓ Docker sandbox isolation")
+        print("  ✓ Read-only filesystem")
+        print("  ✓ Capability restrictions (no-new-privileges)")
+        print("  ✓ Memory limit: 512MB per job")
+        print("  ✓ CPU limit: 1 core per job")
+        print("  ✓ Network isolation (no network access)")
+        print("  ✓ Process limit: 512 max")
+        print("  ✓ 60-second execution timeout")
+        print()
+        
+        # Register
         if not self.register():
             print("Failed to register. Exiting.")
             sys.exit(1)
         
-        print("\n► Polling for jobs (press Ctrl+C to stop)...\n")
+        # Poll loop
+        print("► Polling for jobs (press Ctrl+C to stop)...\n")
         try:
             while True:
                 job = self.poll_jobs()
@@ -172,7 +201,7 @@ class Agent:
             print("\n\n✓ Agent stopped.")
 
 def main():
-    parser = argparse.ArgumentParser(description="Uptime Agent")
+    parser = argparse.ArgumentParser(description="Uptime Sandboxed Compute Agent")
     parser.add_argument("--name", default="device-1", help="Device name")
     parser.add_argument("--price", type=float, default=0.10, help="Price per compute unit")
     parser.add_argument("--url", default="http://localhost:8000", help="Control plane URL")
