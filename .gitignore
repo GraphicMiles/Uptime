@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# environment
+.env
+.env.local
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# local database and logs
+*.db
+*.sqlite3
+*.log
