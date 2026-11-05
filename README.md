@@ -1,73 +1,76 @@
-# Uptime — Compute Rental MVP
+# Uptime
 
-A tangibility skeleton to prove: devices register → jobs submit → jobs execute on devices → output returns.
+A working skeleton for renting out idle compute. A machine registers itself, a job
+is submitted to it, the job runs in a container, and the output comes back.
 
-## Quick Start (5 minutes)
+The whole loop is here and it runs in about a minute: FastAPI control plane,
+SQLite, a Python agent on the worker, and a single page to drive it. It exists to
+prove the loop rather than to be deployed.
 
-### 1. Start the Control Plane
+## Why it exists
+
+"Rent out your spare compute" is easy to say and hard to believe until you watch a
+container start on someone else's machine and hand back a result. This is the
+smallest version that proves it: registration, dispatch, execution, result.
+
+## What you can do
+
+- **Register a device.** The agent reports CPU cores, RAM, disk and whether there
+  is a GPU.
+- **Submit a job** to a device: a Docker image and a command.
+- **Watch it run** on the agent, which polls every five seconds and executes in a
+  container.
+- **Read the output** in the frontend once the agent posts the result.
+- **Inspect the API**: `POST /devices/register`, `GET /devices`,
+  `POST /jobs/submit`, `GET /jobs/pending/{device_id}`,
+  `POST /jobs/{id}/result`, `GET /jobs/{id}`.
+
+## Running it
+
+Three terminals, or two machines:
+
 ```bash
+# 1. control plane
 cd control_plane
 pip install -r requirements.txt
-python main.py
-```
-Runs on `http://localhost:8000`
+python main.py            # http://localhost:8000
 
-### 2. Start an Agent (on your machine or another)
-```bash
+# 2. agent, on the machine that will do the work
 cd agent
 pip install -r requirements.txt
 python agent.py --price 0.10 --name "device-1"
+
+# 3. open http://localhost:8000/
 ```
 
-### 3. Submit a Job via Frontend
-Open `http://localhost:8000/` (served by FastAPI)
-- See your registered device
-- Pick it from the dropdown
-- Enter a Docker image + command (e.g., `python:3.11` + `python -c "print('hello')"`)
-- Submit → job runs on the agent → output appears
+Pick the device, enter an image and a command such as `python:3.11` with
+`python -c "print('hello')"`, submit, and watch the output appear. `run.sh` and
+`run.bat` wrap the same commands. Docker must be available to the agent.
 
-## Architecture
+To expose the control plane, a Cloudflare tunnel is enough:
 
-### Control Plane (`control_plane/main.py`)
-FastAPI server with SQLite backend.
-
-**Endpoints:**
-- `POST /devices/register` — device registers itself
-- `GET /devices` — list all devices
-- `POST /jobs/submit` — submit a job to a device
-- `GET /jobs/pending/{device_id}` — agent polls for jobs
-- `POST /jobs/{id}/result` — agent posts job output
-- `GET /jobs/{id}` — check job status
-
-### Agent (`agent/agent.py`)
-Python script runs on device owner's machine.
-
-- Collects specs: CPU cores, RAM, disk, GPU flag
-- Registers with control plane
-- Polls for jobs every 5s
-- Runs jobs in Docker containers
-- Posts results back
-
-### Frontend
-Single static page (served by FastAPI at `/`) with:
-- Device registry table
-- Job submission form
-- Results viewer
-
-## Known Gaps (Not Fixing in v1)
-- No authentication or authorization
-- No scheduler intelligence (manual device selection)
-- Docker runs with default security (not hardened)
-- No payment processing (manual logging only)
-- No persistence across restarts (SQLite is ephemeral)
-
-## Deployment
-Use **Cloudflare Tunnel** to expose the control plane:
 ```bash
 cloudflared tunnel run --url http://localhost:8000
 ```
-This gives you a public URL without port forwarding.
 
----
+## What is not here
 
-**Definition of Done:** One person starts an agent, opens the frontend, submits a job targeting that device, and sees output within ~30s.
+No authentication, no authorisation, no scheduler intelligence (you pick the
+device), no payment processing, and no persistence worth the name: SQLite is
+ephemeral, so a restart loses the registry. Containers run with default Docker
+settings and are not hardened.
+
+Those are recorded as gaps rather than left to be discovered. Do not put this on
+the public internet with a token you care about.
+
+## How it is built
+
+```
+control_plane/    FastAPI app, SQLite models, static frontend
+agent/            the worker: registration, polling, container execution
+docs/             SETUP.md, ROADMAP.md, INVESTOR_BRIEF.md
+```
+
+## Licence
+
+No licence file is included in this repository.
