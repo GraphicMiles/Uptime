@@ -1,4 +1,4 @@
-# Uptime — Compute Rental MVP — Skeleton Build
+# Uptime - Compute Rental MVP - Skeleton Build
 
 ## ⚡ Quick Start (5 minutes)
 
@@ -53,13 +53,13 @@ chmod +x run.sh
 
 ### Control Plane (`control_plane/main.py`)
 FastAPI + SQLite server with 7 endpoints:
-- `POST /devices/register` — Device registration
-- `GET /devices` — List devices
-- `POST /jobs/submit` — Submit job
-- `GET /jobs/pending/{device_id}` — Agent polls for jobs
-- `POST /jobs/{id}/result` — Agent posts results
-- `GET /jobs/{id}` — Check job status
-- `GET /` — Frontend UI
+- `POST /devices/register` - Device registration
+- `GET /devices` - List devices
+- `POST /jobs/submit` - Submit job
+- `GET /jobs/pending/{device_id}` - Agent polls for jobs
+- `POST /jobs/{id}/result` - Agent posts results
+- `GET /jobs/{id}` - Check job status
+- `GET /` - Frontend UI
 
 ### Agent (`agent/agent.py`)
 Python script on your machine:

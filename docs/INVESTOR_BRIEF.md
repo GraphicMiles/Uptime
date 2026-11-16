@@ -1,11 +1,11 @@
-# Uptime — Distributed Compute Network
+# Uptime - Distributed Compute Network
 ## Executive Brief for Investors & Partners
 
 ---
 
 ## 🎯 Executive Summary
 
-**Uptime** is a decentralized compute marketplace that allows individuals and businesses to monetize idle computing resources while providing affordable, scalable compute power to users. Think Airbnb for compute—owners list their devices as compute nodes, users submit jobs, and the network executes them securely in isolated sandboxes.
+**Uptime** is a decentralized compute marketplace that allows individuals and businesses to monetize idle computing resources while providing affordable, scalable compute power to users. Think Airbnb for compute-owners list their devices as compute nodes, users submit jobs, and the network executes them securely in isolated sandboxes.
 
 ### The Problem
 - **Cloud costs** are prohibitively expensive ($0.30-$2.00/hour for compute)
